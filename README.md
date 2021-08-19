@@ -83,3 +83,7 @@ $ go run sszgen/*.go --path ./example --include ./example2
 There are some caveats required to use this functionality.
 - If multiple input paths import the same package, all of them need to import it with the same alias if any.
 - If the folder of the package is not the same as the name of the package, any input file that imports this package needs to do it with an alias.
+
+# Contributing
+
+Read the contribution guideline before making a change to know about the scope of the project and so on. Before making a change I would recomend to create an issue so that we can discuss the best approach and possibility for the new type. Note that not all the types will be supported since code generation is big and the main goal is to support Prysm. So that we recommend best practices instead.
