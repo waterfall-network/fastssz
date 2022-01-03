@@ -150,6 +150,10 @@ func (h *Hasher) AppendUint8(i uint8) {
 	h.buf = MarshalUint8(h.buf, i)
 }
 
+func (h *Hasher) AppendUint16(i uint16) {
+	h.buf = MarshalUint16(h.buf, i)
+}
+
 func (h *Hasher) AppendUint64(i uint64) {
 	h.buf = MarshalUint64(h.buf, i)
 }
