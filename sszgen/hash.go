@@ -171,7 +171,11 @@ func (v *Value) hashTreeRoot(name string, appendBytes bool) string {
 		return fmt.Sprintf("hh.PutBool(%s)", name)
 
 	case TypeVector:
-		return v.hashRoots(false, v.e.t)
+		if v.e.t == TypeBytes || v.e.t == TypeUint {
+			return v.hashRoots(false, v.e.t)
+		}
+		// vector of container is decoded as a list
+		fallthrough
 
 	case TypeList:
 		if v.e.isFixed() {
