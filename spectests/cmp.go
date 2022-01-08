@@ -62,7 +62,7 @@ func deepEqualImpl(v1, v2 reflect.Value, depth int) bool {
 			panic("BUG")
 		}
 		switch v1.Kind() {
-		case reflect.Uint8, reflect.Uint64:
+		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			return v1.Uint() == v2.Uint()
 
 		case reflect.Bool:

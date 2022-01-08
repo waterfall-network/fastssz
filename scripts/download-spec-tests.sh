@@ -18,3 +18,4 @@ function download {
 
 download "minimal"
 download "mainnet"
+download "general"

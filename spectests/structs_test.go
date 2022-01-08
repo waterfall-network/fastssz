@@ -326,6 +326,35 @@ func TestSpecMainnet(t *testing.T) {
 	}
 }
 
+func TestSpecGeneric(t *testing.T) {
+	files := readDir(t, filepath.Join(testsPath, "/general/phase0/ssz_generic/containers/valid"))
+
+	bases := map[string]testCallback{
+		"ComplexTestStruct": func(c string) codec {
+			return &ComplexTestStruct{}
+		},
+	}
+
+	for _, f := range files {
+
+		// find the codec
+		var factory testCallback
+		for elem, item := range bases {
+			if strings.Contains(f, elem) {
+				factory = item
+			}
+		}
+		if factory == nil {
+			continue
+		}
+
+		checkSSZEncoding(t, "", f, "", factory)
+
+		//fmt.Println(f)
+		//fmt.Println(b)
+	}
+}
+
 func checkSSZEncoding(t *testing.T, phase, fileName, structName string, base testCallback) {
 	obj := base(phase)
 	output := readValidGenericSSZ(t, fileName, &obj)
@@ -442,6 +471,7 @@ const (
 	serializedFile = "serialized.ssz_snappy"
 	valueFile      = "value.yaml"
 	rootsFile      = "roots.yaml"
+	metaFile       = "meta.yaml"
 )
 
 func walkPath(t *testing.T, path string) (res []string) {
@@ -493,7 +523,11 @@ func readValidGenericSSZ(t *testing.T, path string, obj interface{}) *output {
 	}
 	raw2, err := ioutil.ReadFile(filepath.Join(path, rootsFile))
 	if err != nil {
-		t.Fatal(err)
+		// try to load the meta.yaml file instead o not found
+		raw2, err = ioutil.ReadFile(filepath.Join(path, metaFile))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Decode ssz root

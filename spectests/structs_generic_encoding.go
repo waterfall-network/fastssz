@@ -531,7 +531,7 @@ func (c *ComplexTestStruct) HashTreeRootWith(hh *ssz.Hasher) (err error) {
 	{
 		subIndx := hh.Index()
 		num := uint64(len(c.F))
-		if num > 0 {
+		if num != 4 {
 			err = ssz.ErrIncorrectListSize
 			return
 		}
@@ -540,14 +540,14 @@ func (c *ComplexTestStruct) HashTreeRootWith(hh *ssz.Hasher) (err error) {
 				return
 			}
 		}
-		hh.MerkleizeWithMixin(subIndx, num, 0)
+		hh.MerkleizeWithMixin(subIndx, num, 4)
 	}
 
 	// Field (6) 'G'
 	{
 		subIndx := hh.Index()
 		num := uint64(len(c.G))
-		if num > 0 {
+		if num != 2 {
 			err = ssz.ErrIncorrectListSize
 			return
 		}
@@ -556,7 +556,7 @@ func (c *ComplexTestStruct) HashTreeRootWith(hh *ssz.Hasher) (err error) {
 				return
 			}
 		}
-		hh.MerkleizeWithMixin(subIndx, num, 0)
+		hh.MerkleizeWithMixin(subIndx, num, 2)
 	}
 
 	hh.Merkleize(indx)
