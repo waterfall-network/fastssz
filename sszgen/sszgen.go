@@ -1,10 +1,9 @@
-package main
+package sszgen
 
 import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"flag"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -22,50 +21,13 @@ import (
 
 const bytesPerLengthOffset = 4
 
-func main() {
-	var source string
-	var objsStr string
-	var output string
-	var include string
-	var experimental bool
-	var excludeObjs string
-
-	flag.StringVar(&source, "path", "", "")
-	flag.StringVar(&objsStr, "objs", "", "")
-	flag.StringVar(&excludeObjs, "exclude-objs", "", "Comma-separated list of types to exclude from output")
-	flag.StringVar(&output, "output", "", "")
-	flag.StringVar(&include, "include", "", "")
-	flag.BoolVar(&experimental, "experimental", false, "")
-
-	flag.Parse()
-
-	targets := decodeList(objsStr)
-	includeList := decodeList(include)
-	excludeTypeNames := make(map[string]bool)
-	for _, name := range decodeList(excludeObjs) {
-		excludeTypeNames[name] = true
-	}
-
-	if err := encode(source, targets, output, includeList, excludeTypeNames, experimental); err != nil {
-		fmt.Printf("[ERR]: %v\n", err)
-		os.Exit(1)
-	}
-}
-
-func decodeList(input string) []string {
-	if input == "" {
-		return []string{}
-	}
-	return strings.Split(strings.TrimSpace(input), ",")
-}
-
 // The SSZ code generation works in three steps:
 // 1. Parse the Go input with the go/parser library to generate an AST representation.
 // 2. Convert the AST into an Internal Representation (IR) to describe the structs and fields
 // using the Value object.
 // 3. Use the IR to print the encoding functions
 
-func encode(source string, targets []string, output string, includePaths []string, excludeTypeNames map[string]bool, experimental bool) error {
+func Encode(source string, targets []string, output string, includePaths []string, excludeTypeNames map[string]bool, experimental bool) error {
 	files, err := parseInput(source) // 1.
 	if err != nil {
 		return err
