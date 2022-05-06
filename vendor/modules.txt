@@ -1,3 +1,5 @@
+# github.com/davecgh/go-spew v1.1.0
+github.com/davecgh/go-spew/spew
 # github.com/golang/snappy v0.0.3
 ## explicit
 github.com/golang/snappy
@@ -7,6 +9,13 @@ github.com/minio/sha256-simd
 # github.com/mitchellh/mapstructure v1.3.2
 ## explicit
 github.com/mitchellh/mapstructure
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/stretchr/testify v1.7.0
+## explicit
+github.com/stretchr/testify/assert
 # gopkg.in/yaml.v2 v2.3.0
 ## explicit
 gopkg.in/yaml.v2
+# gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+gopkg.in/yaml.v3
