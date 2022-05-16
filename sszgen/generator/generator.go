@@ -21,21 +21,83 @@ import (
 
 const bytesPerLengthOffset = 4
 
+type Config struct {
+	PackageName  string
+	Experimental bool
+	Output       string
+	ExcludeNames []string
+	IncludeNames []string
+	Source       string
+	IncludePaths []string
+}
+
+type ConfigOption func(*Config)
+
+func WithOutput(output string) ConfigOption {
+	return func(c *Config) {
+		c.Output = output
+	}
+}
+
+func WithPackageName(name string) ConfigOption {
+	return func(c *Config) {
+		c.PackageName = name
+	}
+}
+
+func WithExperimental() ConfigOption {
+	return func(c *Config) {
+		c.Experimental = true
+	}
+}
+
+func WithExcludeNames(exclude ...string) ConfigOption {
+	return func(c *Config) {
+		c.ExcludeNames = append(c.ExcludeNames, exclude...)
+	}
+}
+
+func WithIncludeNames(include ...string) ConfigOption {
+	return func(c *Config) {
+		c.IncludeNames = append(c.IncludeNames, include...)
+	}
+}
+
+func WithSource(src string) ConfigOption {
+	return func(c *Config) {
+		c.Source = src
+	}
+}
+
+func WithIncludePath(include ...string) ConfigOption {
+	return func(c *Config) {
+		c.IncludePaths = append(c.IncludePaths, include...)
+	}
+}
+
 // The SSZ code generation works in three steps:
 // 1. Parse the Go input with the go/parser library to generate an AST representation.
 // 2. Convert the AST into an Internal Representation (IR) to describe the structs and fields
 // using the Value object.
 // 3. Use the IR to print the encoding functions
 
-func Encode(source string, targets []string, output string, includePaths []string, excludeTypeNames map[string]bool, experimental bool) error {
-	files, err := parseInput(source) // 1.
+func Encode(opts ...ConfigOption /* source string, targets []string, output string, includePaths []string, excludeTypeNames map[string]bool, experimental bool*/) error {
+	config := &Config{
+		ExcludeNames: []string{},
+		IncludeNames: []string{},
+	}
+	for _, opt := range opts {
+		opt(config)
+	}
+
+	files, err := parseInput(config.Source) // 1.
 	if err != nil {
 		return err
 	}
 
 	// parse all the include paths as well
 	include := map[string]*ast.File{}
-	for _, i := range includePaths {
+	for _, i := range config.IncludePaths {
 		files, err := parseInput(i)
 		if err != nil {
 			return err
@@ -51,13 +113,17 @@ func Encode(source string, targets []string, output string, includePaths []strin
 		packName = file.Name.Name
 	}
 
+	excludeTypeNames := map[string]bool{}
+	for _, name := range config.ExcludeNames {
+		excludeTypeNames[name] = true
+	}
 	e := &env{
 		include:          include,
-		source:           source,
+		source:           config.Source,
 		files:            files,
 		objs:             map[string]*Value{},
 		packName:         packName,
-		targets:          targets,
+		targets:          config.IncludeNames,
 		excludeTypeNames: excludeTypeNames,
 	}
 
@@ -67,11 +133,11 @@ func Encode(source string, targets []string, output string, includePaths []strin
 
 	// 3.
 	var out map[string]string
-	if output == "" {
-		out, err = e.generateEncodings(experimental)
+	if config.Output == "" {
+		out, err = e.generateEncodings(config.Experimental)
 	} else {
 		// output to a specific path
-		out, err = e.generateOutputEncodings(output, experimental)
+		out, err = e.generateOutputEncodings(config.Output, config.Experimental)
 	}
 	if err != nil {
 		panic(err)
@@ -563,7 +629,7 @@ func isSpecificFunc(funcDecl *ast.FuncDecl, in, out []string) bool {
 			if err := format.Node(&buf, fset, typ); err != nil {
 				panic(err)
 			}
-			if string(buf.Bytes()) != arg {
+			if buf.String() != arg {
 				return false
 			}
 		}
@@ -914,7 +980,7 @@ func (e *env) parseASTFieldType(name, tags string, expr ast.Expr) (*Value, error
 				}
 				a, err := strconv.ParseUint(arrayLen.Value, 0, 64)
 				if err != nil {
-					return nil, fmt.Errorf("Could not parse array length for field %s", name)
+					return nil, fmt.Errorf("could not parse array length for field %s", name)
 				}
 				astSize = &a
 			}
@@ -926,7 +992,7 @@ func (e *env) parseASTFieldType(name, tags string, expr ast.Expr) (*Value, error
 					return nil, fmt.Errorf("unexpected type for fixed size array, name=%s, type=%s", name, collection.t.String())
 				}
 				if collection.s != *astSize {
-					return nil, fmt.Errorf("Unexpected mismatch between ssz-size and array fixed size, name=%s, ssz-size=%d, fixed=%d", name, collection.s, *astSize)
+					return nil, fmt.Errorf("unexpected mismatch between ssz-size and array fixed size, name=%s, ssz-size=%d, fixed=%d", name, collection.s, *astSize)
 				}
 			}
 

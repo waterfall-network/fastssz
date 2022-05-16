@@ -28,12 +28,20 @@ func main() {
 
 	targets := decodeList(objsStr)
 	includeList := decodeList(include)
-	excludeTypeNames := make(map[string]bool)
-	for _, name := range decodeList(excludeObjs) {
-		excludeTypeNames[name] = true
+	excludeList := decodeList(excludeObjs)
+
+	opts := []generator.ConfigOption{
+		generator.WithSource(source),
+		generator.WithOutput(output),
+		generator.WithIncludePath(includeList...),
+		generator.WithIncludeNames(targets...),
+		generator.WithExcludeNames(excludeList...),
+	}
+	if experimental {
+		opts = append(opts, generator.WithExperimental())
 	}
 
-	if err := generator.Encode(source, targets, output, includeList, excludeTypeNames, experimental); err != nil {
+	if err := generator.Encode(opts...); err != nil {
 		fmt.Printf("[ERR]: %v\n", err)
 		os.Exit(1)
 	}
