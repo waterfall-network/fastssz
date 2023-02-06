@@ -170,19 +170,30 @@ func checkSSZEncoding(t *testing.T, fork fork, fileName, structName string, base
 		fatal("HashTreeRoot_equal", fmt.Errorf("bad root"))
 	}
 
-	if structName == "BeaconState" || structName == "BeaconBlockBody" || structName == "ExecutionPayload" {
+	if structName == "BeaconBlockBody" || structName == "ExecutionPayload" {
 		// this gets to expensive, BeaconState even crashes with out-of-bounds memory allocation
 		return
 	}
 
-	// Proof
-	node, err := obj.GetTree()
+	/*
+		// Proof (tree)
+		node, err := obj.GetTree()
+		if err != nil {
+			fatal("Tree", err)
+		}
+		nodeRoot := node.Hash()
+		if !bytes.Equal(nodeRoot, root[:]) {
+			fatal("Tree_equal", fmt.Errorf("bad node"))
+		}
+	*/
+
+	// Proof (fields)
+	nodeRoot2, err := ssz.Walk(obj, ssz.NewHasher())
 	if err != nil {
-		fatal("Tree", err)
+		fatal("Tree_FieldsRoot", err)
 	}
-	nodeRoot := node.Hash()
-	if !bytes.Equal(nodeRoot, root[:]) {
-		fatal("Tree_equal", fmt.Errorf("bad node"))
+	if !bytes.Equal(nodeRoot2, root[:]) {
+		fatal("Tree_FieldsRoot_equal", fmt.Errorf("bad node"))
 	}
 }
 
@@ -262,6 +273,32 @@ func BenchmarkHashTreeRoot_SuperFast(b *testing.B) {
 	}
 }
 
+func BenchmarkProof_Tree(b *testing.B) {
+	obj := new(BeaconBlock)
+	readValidGenericSSZ(nil, benchmarkTestCase, obj)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		obj.GetTree()
+	}
+}
+
+func BenchmarkProof_Fields(b *testing.B) {
+	obj := new(BeaconBlock)
+	readValidGenericSSZ(nil, benchmarkTestCase, obj)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	hh := ssz.NewHasherWithHashFn(gohashtree.Hash)
+	for i := 0; i < b.N; i++ {
+		ssz.Walk(obj, hh)
+		hh.Reset()
+	}
+}
+
 const (
 	testsPath      = "../eth2.0-spec-tests/tests"
 	serializedFile = "serialized.ssz_snappy"
@@ -336,7 +373,19 @@ func TestWalker(t *testing.T) {
 		panic(err)
 	}
 
-	obj.HashTreeRoot()
+	root1, err := obj.HashTreeRoot()
+	if err != nil {
+		panic(err)
+	}
 
-	ssz.Walk(obj)
+	hh := ssz.NewHasher()
+	root2, err := ssz.Walk(obj, hh)
+	if err != nil {
+		panic(err)
+	}
+
+	// The same!
+	if !bytes.Equal(root1[:], root2) {
+		panic("BAD")
+	}
 }

@@ -1,136 +1,103 @@
 package ssz
 
-import (
-	"fmt"
-)
+var _ HashWalker = (*fieldWalker)(nil)
 
-var _ HashWalker = (*walker)(nil)
-
-func Walk(obj HashRoot) {
-	w := &walker{
-		compute: NewHasher(),
+func Walk(obj HashRoot, h *Hasher) ([]byte, error) {
+	w := &fieldWalker{
+		compute: h,
 		depth:   -1,
 	}
-	obj.HashTreeRootWith(w)
-
-	for i, f := range w.fields {
-		fmt.Println("==>", i, f)
+	if err := obj.HashTreeRootWith(w); err != nil {
+		return nil, err
 	}
+
+	// TODO: Generate the intermediate tree to generate the proofs
+	root := w.compute.merkleizeImpl(nil, w.fields, 0)
+	return root, nil
 }
 
-type walker struct {
+type fieldWalker struct {
 	// hasher for sub-elements
 	compute *Hasher
 
 	// list of computed fields
-	fields [][]byte
+	fields []byte
 
 	// current depth of the hash computation
 	depth int64
 }
 
-func (w *walker) Hash() []byte {
+func (w *fieldWalker) Hash() []byte {
 	return nil
 }
 
-func (w *walker) AppendUint8(i uint8) {
-	if w.depth != 0 {
-		w.compute.AppendUint8(i)
-		return
+func (w *fieldWalker) complete() {
+	if w.depth == 0 {
+		w.fields = append(w.fields, w.compute.Hash()...)
 	}
-
-	panic("TODO")
 }
 
-func (w *walker) AppendUint64(i uint64) {
-	if w.depth != 0 {
-		w.compute.AppendUint64(i)
-		return
-	}
-	panic("TODO")
+func (w *fieldWalker) AppendUint8(i uint8) {
+	w.compute.AppendUint8(i)
+	w.complete()
 }
 
-func (w *walker) AppendBytes32(b []byte) {
-	if w.depth != 0 {
-		w.compute.AppendBytes32(b)
-		return
-	}
-	panic("TODO")
+func (w *fieldWalker) AppendUint64(i uint64) {
+	w.compute.AppendUint64(i)
+	w.complete()
 }
 
-func (w *walker) PutUint64(i uint64) {
+func (w *fieldWalker) AppendBytes32(b []byte) {
+	w.compute.AppendBytes32(b)
+	w.complete()
+}
+
+func (w *fieldWalker) PutUint64(i uint64) {
 	w.compute.PutUint64(i)
-
-	if w.depth == 0 {
-		w.fields = append(w.fields, w.compute.Hash())
-	}
+	w.complete()
 }
 
-func (w *walker) PutUint32(i uint32) {
-	if w.depth != 0 {
-		w.compute.PutUint32(i)
-		return
-	}
-	panic("TODO")
+func (w *fieldWalker) PutUint32(i uint32) {
+	w.compute.PutUint32(i)
+	w.complete()
 }
 
-func (w *walker) PutUint16(i uint16) {
-	if w.depth != 0 {
-		w.compute.PutUint16(i)
-		return
-	}
-	panic("TODO")
+func (w *fieldWalker) PutUint16(i uint16) {
+	w.compute.PutUint16(i)
+	w.complete()
 }
 
-func (w *walker) PutUint8(i uint8) {
-	if w.depth != 0 {
-		w.compute.PutUint8(i)
-		return
-	}
-	panic("TODO")
+func (w *fieldWalker) PutUint8(i uint8) {
+	w.compute.PutUint8(i)
+	w.complete()
 }
 
-func (w *walker) FillUpTo32() {
-	if w.depth != 0 {
-		w.compute.FillUpTo32()
-		return
-	}
-	panic("TODO")
+func (w *fieldWalker) FillUpTo32() {
+	w.compute.FillUpTo32()
+	// FillUpTo32 is part of Merkleize calls, do not need to complete
 }
 
-func (w *walker) Append(i []byte) {
-	if w.depth != 0 {
-		w.compute.Append(i)
-		return
-	}
-	panic("TODO")
+func (w *fieldWalker) Append(i []byte) {
+	w.compute.Append(i)
+	// Append is part of Merkleize calls, do not need to complete
 }
 
-func (w *walker) PutBitlist(bb []byte, maxSize uint64) {
-	if w.depth != 0 {
-		w.compute.PutBitlist(bb, maxSize)
-		return
-	}
-	panic("TODO")
+func (w *fieldWalker) PutBitlist(bb []byte, maxSize uint64) {
+	w.compute.PutBitlist(bb, maxSize)
+	w.complete()
 }
 
-func (w *walker) PutBool(b bool) {
-	if w.depth != 0 {
-		w.compute.PutBool(b)
-		return
-	}
-	panic("TODO")
+func (w *fieldWalker) PutBool(b bool) {
+	w.compute.PutBool(b)
+	w.complete()
 }
 
-func (w *walker) PutBytes(b []byte) {
+func (w *fieldWalker) PutBytes(b []byte) {
 	w.compute.PutBytes(b)
-
-	if w.depth == 0 {
-		w.fields = append(w.fields, w.compute.Hash())
-	}
+	w.complete()
 }
 
-func (w *walker) Index() int {
+func (w *fieldWalker) Index() int {
 	var indx int
 	if w.depth >= 0 {
 		// sub-items
@@ -141,7 +108,7 @@ func (w *walker) Index() int {
 	return indx
 }
 
-func (w *walker) Merkleize(indx int) {
+func (w *fieldWalker) Merkleize(indx int) {
 	if w.depth == 0 {
 		// the main object ends with this merkleize call
 		return
@@ -151,17 +118,13 @@ func (w *walker) Merkleize(indx int) {
 	w.depth--
 	w.compute.Merkleize(indx)
 
-	if w.depth == 0 {
-		w.fields = append(w.fields, w.compute.Hash())
-	}
+	w.complete()
 }
 
-func (w *walker) MerkleizeWithMixin(indx int, num, limit uint64) {
+func (w *fieldWalker) MerkleizeWithMixin(indx int, num, limit uint64) {
 	// merkleize a sub-item and gather the fields
 	w.depth--
 	w.compute.MerkleizeWithMixin(indx, num, limit)
 
-	if w.depth == 0 {
-		w.fields = append(w.fields, w.compute.Hash())
-	}
+	w.complete()
 }

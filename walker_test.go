@@ -6,7 +6,7 @@ import (
 )
 
 func TestWalkerXXX(t *testing.T) {
-	w := &walker{
+	w := &fieldWalker{
 		compute: NewHasher(),
 		depth:   -1,
 	}
