@@ -4,6 +4,7 @@
 package spectests
 
 import (
+	"fmt"
 	ssz "github.com/ferranbt/fastssz"
 )
 
@@ -2966,6 +2967,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		return
 	}
 
+	fmt.Println("#3", hh.Hash())
 	// Field (4) 'LatestBlockHeader'
 	if b.LatestBlockHeader == nil {
 		b.LatestBlockHeader = new(BeaconBlockHeader)
@@ -2973,7 +2975,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 	if err = b.LatestBlockHeader.HashTreeRootWith(hh); err != nil {
 		return
 	}
-
+	fmt.Println("#4", hh.Hash())
 	// Field (5) 'BlockRoots'
 	{
 		if size := len(b.BlockRoots); size != 8192 {
@@ -2990,7 +2992,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		}
 		hh.Merkleize(subIndx)
 	}
-
+	fmt.Println("#5", hh.Hash())
 	// Field (6) 'StateRoots'
 	{
 		if size := len(b.StateRoots); size != 8192 {
@@ -3007,7 +3009,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		}
 		hh.Merkleize(subIndx)
 	}
-
+	fmt.Println("#6", hh.Hash())
 	// Field (7) 'HistoricalRoots'
 	{
 		if size := len(b.HistoricalRoots); size > 16777216 {
@@ -3025,7 +3027,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		numItems := uint64(len(b.HistoricalRoots))
 		hh.MerkleizeWithMixin(subIndx, numItems, 16777216)
 	}
-
+	fmt.Println("#7", hh.Hash())
 	// Field (8) 'Eth1Data'
 	if b.Eth1Data == nil {
 		b.Eth1Data = new(Eth1Data)
@@ -3033,6 +3035,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 	if err = b.Eth1Data.HashTreeRootWith(hh); err != nil {
 		return
 	}
+	fmt.Println("#8", hh.Hash())
 
 	// Field (9) 'Eth1DataVotes'
 	{
@@ -3049,10 +3052,12 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		}
 		hh.MerkleizeWithMixin(subIndx, num, 2048)
 	}
-
+	fmt.Println("#9", hh.Hash())
+	
 	// Field (10) 'Eth1DepositIndex'
 	hh.PutUint64(b.Eth1DepositIndex)
 
+	
 	// Field (11) 'Validators'
 	{
 		subIndx := hh.Index()
@@ -3068,6 +3073,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		}
 		hh.MerkleizeWithMixin(subIndx, num, 1099511627776)
 	}
+	fmt.Println("#11", hh.Hash())
 
 	// Field (12) 'Balances'
 	{
@@ -3083,6 +3089,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		numItems := uint64(len(b.Balances))
 		hh.MerkleizeWithMixin(subIndx, numItems, ssz.CalculateLimit(1099511627776, numItems, 8))
 	}
+	fmt.Println("#12", hh.Hash())
 
 	// Field (13) 'RandaoMixes'
 	{
@@ -3100,6 +3107,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		}
 		hh.Merkleize(subIndx)
 	}
+	fmt.Println("#13", hh.Hash())
 
 	// Field (14) 'Slashings'
 	{
@@ -3113,6 +3121,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		}
 		hh.Merkleize(subIndx)
 	}
+	fmt.Println("#14", hh.Hash())
 
 	// Field (15) 'PreviousEpochAttestations'
 	{
@@ -3129,6 +3138,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		}
 		hh.MerkleizeWithMixin(subIndx, num, 4096)
 	}
+	fmt.Println("#15", hh.Hash())
 
 	// Field (16) 'CurrentEpochAttestations'
 	{
@@ -3145,6 +3155,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 		}
 		hh.MerkleizeWithMixin(subIndx, num, 4096)
 	}
+	fmt.Println("#16", hh.Hash())
 
 	// Field (17) 'JustificationBits'
 	if size := len(b.JustificationBits); size != 1 {
@@ -3160,6 +3171,7 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 	if err = b.PreviousJustifiedCheckpoint.HashTreeRootWith(hh); err != nil {
 		return
 	}
+	fmt.Println("#18", hh.Hash())
 
 	// Field (19) 'CurrentJustifiedCheckpoint'
 	if b.CurrentJustifiedCheckpoint == nil {
@@ -3168,6 +3180,8 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 	if err = b.CurrentJustifiedCheckpoint.HashTreeRootWith(hh); err != nil {
 		return
 	}
+	
+	fmt.Println("#19", hh.Hash())
 
 	// Field (20) 'FinalizedCheckpoint'
 	if b.FinalizedCheckpoint == nil {
@@ -3176,7 +3190,9 @@ func (b *BeaconState) HashTreeRootWith(hh ssz.HashWalker) (err error) {
 	if err = b.FinalizedCheckpoint.HashTreeRootWith(hh); err != nil {
 		return
 	}
-
+	fmt.Println("#20", hh.Hash())
+	
+	fmt.Println("_ ENBD _")
 	hh.Merkleize(indx)
 	return
 }

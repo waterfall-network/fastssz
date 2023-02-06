@@ -320,3 +320,23 @@ func readValidGenericSSZ(t *testing.T, path string, obj interface{}) *output {
 	}
 	return &output{root: root, ssz: serialized}
 }
+
+func TestWalker(t *testing.T) {
+	serializedSnappy, err := ioutil.ReadFile("../eth2.0-spec-tests/tests/mainnet/phase0/ssz_static/BeaconState/ssz_random/case_0/serialized.ssz_snappy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	serialized, err := snappy.Decode(nil, serializedSnappy)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	obj := new(BeaconState)
+	if err := obj.UnmarshalSSZ(serialized); err != nil {
+		panic(err)
+	}
+
+	obj.HashTreeRoot()
+
+	ssz.Walk(obj)
+}
