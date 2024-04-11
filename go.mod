@@ -1,4 +1,4 @@
-module github.com/ferranbt/fastssz
+module github.com/waterfall-network/fastssz
 
 go 1.18
 
